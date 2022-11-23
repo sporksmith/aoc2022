@@ -9,6 +9,9 @@ pkgs.mkShell {
     #git
     #vim
 
+    # debugging
+    wabt
+
     # rust
     rustup
 
@@ -20,4 +23,6 @@ pkgs.mkShell {
     # More build deps
     glibc
   ];
+  # Workaround: https://github.com/webpack/webpack/issues/14532#issuecomment-947525539
+  NODE_OPTIONS = "--openssl-legacy-provider";
 }
