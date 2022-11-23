@@ -4,9 +4,20 @@ let
 in
 pkgs.mkShell {
   buildInputs = with pkgs; [
-    coreutils
-    git
+    # basics. maybe just inherit instead?
+    #coreutils
+    #git
+    #vim
+
+    # rust
     rustup
-    vim
+
+    # https://rustwasm.github.io/docs/book/game-of-life/setup.html
+    wasm-pack
+    cargo-generate
+    nodejs_latest
+
+    # More build deps
+    glibc
   ];
 }
