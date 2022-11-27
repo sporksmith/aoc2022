@@ -98,3 +98,9 @@ Serve locally:
 ```
 cd www && npm run start
 ```
+
+Run tests:
+
+```
+wasm-pack test --firefox --headless
+```

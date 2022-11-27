@@ -165,7 +165,7 @@ impl fmt::Display for Universe {
     }
 }
 #[wasm_bindgen]
-extern {
+extern "C" {
     fn alert(s: &str);
 }
 
