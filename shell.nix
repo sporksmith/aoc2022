@@ -4,11 +4,6 @@ let
 in
 pkgs.mkShell {
   buildInputs = with pkgs; [
-    # basics. maybe just inherit instead?
-    #coreutils
-    #git
-    #vim
-
     # debugging
     wabt
 
