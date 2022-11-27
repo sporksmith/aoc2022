@@ -4,7 +4,6 @@ let
 in
 pkgs.mkShell rec {
   PROJECT_ROOT = builtins.toString ./.;
-  RUSTUP_HOME = "${PROJECT_ROOT}/.rustup";
   buildInputs = with pkgs; [
     # basics. maybe just inherit instead?
     #coreutils
@@ -25,6 +24,11 @@ pkgs.mkShell rec {
     # More build deps
     glibc
   ];
-  # Workaround: https://github.com/webpack/webpack/issues/14532#issuecomment-947525539
-  NODE_OPTIONS = "--openssl-legacy-provider";
+  shellHook = ''
+    # Workaround: https://github.com/webpack/webpack/issues/14532#issuecomment-947525539
+    export NODE_OPTIONS="--openssl-legacy-provider";
+
+    # Workaround: https://github.com/NixOS/nixpkgs/issues/112535#issuecomment-1328173640
+    export RUSTUP_HOME="${PROJECT_ROOT}/.rustup";
+  '';
 }
