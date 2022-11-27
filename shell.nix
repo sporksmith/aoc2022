@@ -2,8 +2,7 @@ let
   sources = import ./nix/sources.nix { };
   pkgs = import sources.nixpkgs { };
 in
-pkgs.mkShell rec {
-  PROJECT_ROOT = builtins.toString ./.;
+pkgs.mkShell {
   buildInputs = with pkgs; [
     # basics. maybe just inherit instead?
     #coreutils
@@ -29,6 +28,6 @@ pkgs.mkShell rec {
     export NODE_OPTIONS="--openssl-legacy-provider";
 
     # Workaround: https://github.com/NixOS/nixpkgs/issues/112535#issuecomment-1328173640
-    export RUSTUP_HOME="${PROJECT_ROOT}/.rustup";
+    export RUSTUP_HOME="$PWD/.rustup";
   '';
 }
