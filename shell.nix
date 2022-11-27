@@ -2,7 +2,9 @@ let
   sources = import ./nix/sources.nix { };
   pkgs = import sources.nixpkgs { };
 in
-pkgs.mkShell {
+pkgs.mkShell rec {
+  PROJECT_ROOT = builtins.toString ./.;
+  RUSTUP_HOME = "${PROJECT_ROOT}/.rustup";
   buildInputs = with pkgs; [
     # basics. maybe just inherit instead?
     #coreutils
