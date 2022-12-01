@@ -14,6 +14,6 @@ extern {
 }
 
 #[wasm_bindgen]
-pub fn greet() {
-    alert("Hello, day1!");
+pub fn p1solution() -> String {
+    String::from("part 1 solution")
 }
