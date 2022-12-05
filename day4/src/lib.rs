@@ -42,9 +42,9 @@ impl AssignmentPair {
 
     pub fn is_partly_redundant(&self) -> bool {
         self.a1.range.contains(self.a2.range.start())
-        || self.a1.range.contains(self.a2.range.end())
-        || self.a2.range.contains(self.a1.range.start())
-        || self.a2.range.contains(self.a1.range.end())
+            || self.a1.range.contains(self.a2.range.end())
+            || self.a2.range.contains(self.a1.range.start())
+            || self.a2.range.contains(self.a1.range.end())
     }
 }
 
