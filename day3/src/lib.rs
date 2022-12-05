@@ -29,9 +29,12 @@ pub mod p1 {
 
     type Compartments = (BTreeSet<char>, BTreeSet<char>);
     fn knapsack_compartments(knapsack: &Knapsack) -> Compartments {
-        let (front, back) = knapsack.split_at(knapsack.len()/2);
+        let (front, back) = knapsack.split_at(knapsack.len() / 2);
         assert_eq!(front.len(), back.len());
-        (front.iter().copied().collect(), back.iter().copied().collect())
+        (
+            front.iter().copied().collect(),
+            back.iter().copied().collect(),
+        )
     }
 
     fn dupe_item(c: &Compartments) -> char {
@@ -39,11 +42,24 @@ pub mod p1 {
     }
     #[test]
     fn test_dupe_item() {
-        assert_eq!(dupe_item(&(BTreeSet::from(['a', 'b', 'c']), BTreeSet::from(['c', 'd', 'e']))), 'c');
+        assert_eq!(
+            dupe_item(&(
+                BTreeSet::from(['a', 'b', 'c']),
+                BTreeSet::from(['c', 'd', 'e'])
+            )),
+            'c'
+        );
     }
 
     pub fn solve(input: &str) -> u32 {
-        input.trim().lines().map(parse_line).map(|k| knapsack_compartments(&k)).map(|c| dupe_item(&c)).map(priority).sum()
+        input
+            .trim()
+            .lines()
+            .map(parse_line)
+            .map(|k| knapsack_compartments(&k))
+            .map(|c| dupe_item(&c))
+            .map(priority)
+            .sum()
     }
     #[test]
     fn test_solve() {
@@ -80,7 +96,14 @@ pub mod p2 {
     }
 
     fn badge_for_group(group: &[KnapsackSet; 3]) -> char {
-        group[0].intersection(&group[1]).copied().collect::<KnapsackSet>().intersection(&group[2]).copied().next().unwrap()
+        group[0]
+            .intersection(&group[1])
+            .copied()
+            .collect::<KnapsackSet>()
+            .intersection(&group[2])
+            .copied()
+            .next()
+            .unwrap()
     }
 
     pub fn solve(input: &str) -> u32 {
