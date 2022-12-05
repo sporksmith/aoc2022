@@ -17,6 +17,8 @@ pkgs.mkShell {
 
     # More build deps
     glibc
+    openssl
+    openssl.dev
   ];
   shellHook = ''
     # Workaround: https://github.com/webpack/webpack/issues/14532#issuecomment-947525539
