@@ -1,14 +1,57 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+pub mod p1 {
+    use std::collections::BTreeSet;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
+    type Knapsack = Vec<char>;
+    fn parse_line(line: &str) -> Knapsack {
+        line.chars().collect()
+    }
     #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+    fn test_parse_line() {
+        assert_eq!(parse_line("abcd"), vec!['a', 'b', 'c', 'd']);
+    }
+
+    type Compartments = (BTreeSet<char>, BTreeSet<char>);
+    fn knapsack_compartments(knapsack: &Knapsack) -> Compartments {
+        let (front, back) = knapsack.split_at(knapsack.len()/2);
+        assert_eq!(front.len(), back.len());
+        (front.iter().copied().collect(), back.iter().copied().collect())
+    }
+
+    fn dupe_item(c: &Compartments) -> char {
+        c.0.intersection(&c.1).copied().next().unwrap()
+    }
+    #[test]
+    fn test_dupe_item() {
+        assert_eq!(dupe_item(&(BTreeSet::from(['a', 'b', 'c']), BTreeSet::from(['c', 'd', 'e']))), 'c');
+    }
+
+    fn priority(c: char) -> u32 {
+        if c.is_lowercase() {
+            u32::from(c) - u32::from('a') + 1
+        } else {
+            u32::from(c) - u32::from('A') + 27
+        }
+    }
+    #[test]
+    fn test_priority() {
+        assert_eq!(priority('a'), 1);
+        assert_eq!(priority('b'), 2);
+        assert_eq!(priority('A'), 27);
+        assert_eq!(priority('B'), 28);
+    }
+
+    pub fn solve(input: &str) -> u32 {
+        input.trim().lines().map(parse_line).map(|k| knapsack_compartments(&k)).map(|c| dupe_item(&c)).map(priority).sum()
+    }
+    #[test]
+    fn test_solve() {
+        let input = "vJrwpWtwJgWrhcsFMMfFFhFp
+jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
+PmmdzqPrVvPwwTWBwg
+wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn
+ttgJtRGJQctTZtZT
+CrZsJsPPZsGzwwsLwLmpwMDw
+";
+        assert_eq!(solve(input), 157);
     }
 }
