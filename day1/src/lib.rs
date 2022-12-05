@@ -48,7 +48,7 @@ pub mod p1 {
         Ok(())
     }
 
-    fn parse(s: &str)-> Vec<Option<u32>> {
+    pub fn parse(s: &str)-> Vec<Option<u32>> {
         s.lines().map(str::trim).map(|l| if l.is_empty() {
             None
         } else {
@@ -56,7 +56,7 @@ pub mod p1 {
         }).collect()
     }
 
-    fn totals(input: &[Option<u32>]) -> Vec<u32> {
+    pub fn totals(input: &[Option<u32>]) -> Vec<u32> {
         let groups = input.split(Option::is_none);
         let mut res = Vec::new();
         for g in groups {
