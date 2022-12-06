@@ -1,14 +1,23 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+pub mod p1 {
+    use std::collections::BTreeSet;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
+    pub fn solve(input: &str) -> usize {
+        let mut chars = input.chars();
+        let mut idx = 0;
+        loop {
+            let next4 : BTreeSet<char> = chars.clone().take(4).collect();
+            if next4.len() == 4 {
+                return idx + 4;
+            }
+            idx += 1;
+            chars.next();
+        }
+    }
     #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+    pub fn test_solve() {
+        assert_eq!(solve("bvwbjplbgvbhsrlpgdmjqwftvncz"), 5);
+        assert_eq!(solve("nppdvjthqldpwncqszvftbrmjlhg"), 6);
+        assert_eq!(solve("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg"), 10);
+        assert_eq!(solve("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw"), 11);
     }
 }
