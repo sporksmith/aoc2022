@@ -173,4 +173,81 @@ fn test_parse_filestat() {
     assert_eq!(FileStat::parse_borrowed("dir bshmsns"), None);
 }
 
-pub mod p1 {}
+pub mod p1 {
+    use std::collections::HashMap;
+
+    use super::*;
+
+    pub fn solve(input: &str) -> usize {
+        let lines = input.lines().map(|l| Line::parse_borrowed(l).unwrap());
+        /*
+        for line in lines.clone() {
+            println!("{:?}", line);
+        }
+        */
+        let mut cwd = Vec::<&str>::new();
+        let mut sizes = HashMap::<String, usize>::new();
+        for l in lines {
+            match l {
+                Line::Command(c) => {
+                    match c {
+                        Command::Cd(dirname) => {
+                            if dirname == "/" {
+                                cwd.clear();
+                            } else if dirname == ".." {
+                                cwd.pop();
+                            } else {
+                                cwd.push(dirname);
+                            }
+                        }
+                        Command::Ls => {
+                            // ignore
+                        }
+                    }
+                }
+                Line::Output(o) => {
+                    match o {
+                        Output::DirStat(d) => {
+                            // ignore
+                        }
+                        Output::FileStat(f) => {
+                            for i in 0..=cwd.len() {
+                                let path = cwd[0..cwd.len() - i].join("/");
+                                *sizes.entry(path).or_default() += f.size;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        sizes.values().copied().filter(|sz| *sz <= 100_000).sum()
+    }
+
+    #[test]
+    fn test_solve() {
+        let input = r#"$ cd /
+$ ls
+dir a
+14848514 b.txt
+8504156 c.dat
+dir d
+$ cd a
+$ ls
+dir e
+29116 f
+2557 g
+62596 h.lst
+$ cd e
+$ ls
+584 i
+$ cd ..
+$ cd ..
+$ cd d
+$ ls
+4060174 j
+8033020 d.log
+5626152 d.ext
+7214296 k"#;
+        assert_eq!(solve(input), 95437);
+    }
+}
