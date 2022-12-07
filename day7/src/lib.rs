@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
 #[derive(Debug, Eq, PartialEq)]
 enum Line<'a> {
@@ -173,53 +173,53 @@ fn test_parse_filestat() {
     assert_eq!(FileStat::parse_borrowed("dir bshmsns"), None);
 }
 
+fn get_dir_sizes(input: &str) -> HashMap<String, usize> {
+    let lines = input.lines().map(|l| Line::parse_borrowed(l).unwrap());
+    let mut cwd = Vec::<&str>::new();
+    let mut sizes = HashMap::<String, usize>::new();
+    for l in lines {
+        match l {
+            Line::Command(c) => {
+                match c {
+                    Command::Cd(dirname) => {
+                        if dirname == "/" {
+                            cwd.clear();
+                        } else if dirname == ".." {
+                            cwd.pop();
+                        } else {
+                            cwd.push(dirname);
+                        }
+                    }
+                    Command::Ls => {
+                        // ignore
+                    }
+                }
+            }
+            Line::Output(o) => {
+                match o {
+                    Output::DirStat(d) => {
+                        // ignore
+                    }
+                    Output::FileStat(f) => {
+                        for i in 0..=cwd.len() {
+                            let path = cwd[0..cwd.len() - i].join("/");
+                            *sizes.entry(path).or_default() += f.size;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    sizes
+}
+
 pub mod p1 {
     use std::collections::HashMap;
 
     use super::*;
 
     pub fn solve(input: &str) -> usize {
-        let lines = input.lines().map(|l| Line::parse_borrowed(l).unwrap());
-        /*
-        for line in lines.clone() {
-            println!("{:?}", line);
-        }
-        */
-        let mut cwd = Vec::<&str>::new();
-        let mut sizes = HashMap::<String, usize>::new();
-        for l in lines {
-            match l {
-                Line::Command(c) => {
-                    match c {
-                        Command::Cd(dirname) => {
-                            if dirname == "/" {
-                                cwd.clear();
-                            } else if dirname == ".." {
-                                cwd.pop();
-                            } else {
-                                cwd.push(dirname);
-                            }
-                        }
-                        Command::Ls => {
-                            // ignore
-                        }
-                    }
-                }
-                Line::Output(o) => {
-                    match o {
-                        Output::DirStat(d) => {
-                            // ignore
-                        }
-                        Output::FileStat(f) => {
-                            for i in 0..=cwd.len() {
-                                let path = cwd[0..cwd.len() - i].join("/");
-                                *sizes.entry(path).or_default() += f.size;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        let sizes = get_dir_sizes(input);
         sizes.values().copied().filter(|sz| *sz <= 100_000).sum()
     }
 
@@ -249,5 +249,54 @@ $ ls
 5626152 d.ext
 7214296 k"#;
         assert_eq!(solve(input), 95437);
+    }
+}
+
+pub mod p2 {
+    use std::collections::HashMap;
+
+    use super::*;
+
+    pub fn solve(input: &str) -> usize {
+        const PARTITION_SZ: usize = 70000000;
+        const UPDATE_SZ: usize = 30000000;
+        let sizes = get_dir_sizes(input);
+        let root_sz = *sizes.get("").unwrap();
+        let free = PARTITION_SZ - root_sz;
+        let needed = UPDATE_SZ - free;
+        sizes
+            .values()
+            .copied()
+            .filter(|sz| *sz >= needed)
+            .min()
+            .unwrap()
+    }
+
+    #[test]
+    fn test_solve() {
+        let input = r#"$ cd /
+$ ls
+dir a
+14848514 b.txt
+8504156 c.dat
+dir d
+$ cd a
+$ ls
+dir e
+29116 f
+2557 g
+62596 h.lst
+$ cd e
+$ ls
+584 i
+$ cd ..
+$ cd ..
+$ cd d
+$ ls
+4060174 j
+8033020 d.log
+5626152 d.ext
+7214296 k"#;
+        assert_eq!(solve(input), 24933642);
     }
 }
