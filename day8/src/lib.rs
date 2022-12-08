@@ -93,6 +93,44 @@ impl TreeHeights {
             values: visibilities,
         })
     }
+
+    pub fn scenic_score_at(&self, x: usize, y: usize) -> usize {
+        let max_height = self.height_at(x, y);
+
+        let mut left = 0;
+        for x in (0..x).rev() {
+            left += 1;
+            if self.height_at(x, y) >= max_height {
+                break;
+            }
+        }
+
+        let mut right = 0;
+        for x in (x + 1)..self.width() {
+            right += 1;
+            if self.height_at(x, y) >= max_height {
+                break;
+            }
+        }
+
+        let mut up = 0;
+        for y in (y + 1)..self.height() {
+            up += 1;
+            if self.height_at(x, y) >= max_height {
+                break;
+            }
+        }
+
+        let mut down = 0;
+        for y in (0..y).rev() {
+            down += 1;
+            if self.height_at(x, y) >= max_height {
+                break;
+            }
+        }
+
+        left * right * up * down
+    }
 }
 
 impl FromStr for TreeHeights {
@@ -200,5 +238,30 @@ pub mod p1 {
         let heights: TreeHeights = input.parse().unwrap();
         let visibilities = heights.visibilities();
         visibilities.count()
+    }
+}
+
+pub mod p2 {
+    use itertools::Itertools;
+
+    use super::*;
+
+    pub fn solve(input: &str) -> usize {
+        let heights: TreeHeights = input.parse().unwrap();
+        (0..heights.width())
+            .cartesian_product(0..heights.height())
+            .map(|(x, y)| heights.scenic_score_at(x, y))
+            .max()
+            .unwrap()
+    }
+
+    #[test]
+    fn test_solve() {
+        let s: &str = r#"30373
+                         25512
+                         65332
+                         33549
+                         35390"#;
+        assert_eq!(solve(s), 8);
     }
 }
