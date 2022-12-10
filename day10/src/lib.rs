@@ -221,3 +221,34 @@ noop";
         assert_eq!(solve(input), 13140);
     }
 }
+
+pub mod p2 {
+    use super::*;
+
+    pub fn solve(input: &str) -> String {
+        let mut output = String::new();
+        let instructions = input
+            .lines()
+            .map(|l| l.trim().parse::<Instruction>().unwrap());
+        let mut state = State {
+            x: 1,
+            cycles_executed: 0,
+        };
+        for inst in instructions {
+            let next_state = execute(state, inst);
+            for cycle in state.cycles_executed..next_state.cycles_executed {
+                let sprite_pos = cycle % 40;
+                if ((state.x - 1)..=(state.x + 1)).contains(&sprite_pos.try_into().unwrap()) {
+                    output.push('#');
+                } else {
+                    output.push('.');
+                }
+                if sprite_pos == 39 {
+                    output.push('\n');
+                }
+            }
+            state = next_state;
+        }
+        output
+    }
+}
