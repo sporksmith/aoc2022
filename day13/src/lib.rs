@@ -23,7 +23,7 @@ fn parse_int(s: &str) -> (Int, &str) {
     let first_non_dig = s.find(|c: char| !c.is_digit(10));
     let (prefix, suffix) = match first_non_dig {
         Some(idx) => s.split_at(idx),
-        None => (s, "")
+        None => (s, ""),
     };
     (prefix.parse().unwrap(), suffix)
 }
@@ -33,7 +33,7 @@ fn parse_list(s: &str) -> (List, &str) {
     let mut s = s.strip_prefix('[').unwrap();
     loop {
         if let Some(suffix) = s.strip_prefix(']') {
-            return (items, suffix)
+            return (items, suffix);
         }
         let (item, suffix) = parse_item(s);
         items.push(item);
@@ -58,18 +58,40 @@ fn test_parse_item() {
     assert_eq!(parse_item("42]"), (Item::Int(42), "]"));
     assert_eq!(parse_item("[]"), (Item::List(vec![]), ""));
     assert_eq!(parse_item("[42]"), (Item::List(vec![Item::Int(42)]), ""));
-    assert_eq!(parse_item("[42,43]"), (Item::List(vec![Item::Int(42), Item::Int(43)]), ""));
-    assert_eq!(parse_item("[42,43,[44]]"), (Item::List(vec![Item::Int(42), Item::Int(43), Item::List(vec![Item::Int(44)])]), ""));
+    assert_eq!(
+        parse_item("[42,43]"),
+        (Item::List(vec![Item::Int(42), Item::Int(43)]), "")
+    );
+    assert_eq!(
+        parse_item("[42,43,[44]]"),
+        (
+            Item::List(vec![
+                Item::Int(42),
+                Item::Int(43),
+                Item::List(vec![Item::Int(44)])
+            ]),
+            ""
+        )
+    );
 
-    assert_eq!(parse_item("[[1],[2,4]]"), (Item::List(vec![
-        Item::List(vec![Item::Int(1)]),
-        Item::List(vec![Item::Int(2),Item::Int(4)]),
-    ]), ""));
-    assert_eq!(parse_item("[[]]"), (Item::List(vec![Item::List(vec![])]), ""));
+    assert_eq!(
+        parse_item("[[1],[2,4]]"),
+        (
+            Item::List(vec![
+                Item::List(vec![Item::Int(1)]),
+                Item::List(vec![Item::Int(2), Item::Int(4)]),
+            ]),
+            ""
+        )
+    );
+    assert_eq!(
+        parse_item("[[]]"),
+        (Item::List(vec![Item::List(vec![])]), "")
+    );
 }
 
 impl FromStr for Item {
-    type Err=();
+    type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (item, suffix) = parse_item(s);
@@ -114,9 +136,21 @@ pub mod p1 {
         let pairs = input.split("\n\n");
         let pairs = pairs.map(|s| -> (Item, Item) {
             let (first, second) = s.split_once('\n').unwrap();
-            (first.trim().parse().unwrap(), second.trim().parse().unwrap())
+            (
+                first.trim().parse().unwrap(),
+                second.trim().parse().unwrap(),
+            )
         });
-        pairs.enumerate().filter_map(|(idx, pair)| if pair.0 <= pair.1 {Some(idx + 1)} else {None}).sum()
+        pairs
+            .enumerate()
+            .filter_map(|(idx, pair)| {
+                if pair.0 <= pair.1 {
+                    Some(idx + 1)
+                } else {
+                    None
+                }
+            })
+            .sum()
     }
     #[test]
     fn test_solve() {
