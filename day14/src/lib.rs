@@ -186,7 +186,16 @@ pub mod p2 {
     use super::*;
 
     pub fn solve(input: &str) -> u32 {
-        todo!();
+        let mut cave: Cave<true> = input.parse().unwrap();
+        let mut count = 0;
+        loop {
+            let pos = cave.process_one_sand().unwrap();
+            count += 1;
+            //println!("{}\n", cave);
+            if pos == GENERATOR {
+                return count;
+            }
+        }
     }
 }
 
@@ -232,5 +241,12 @@ mod test {
         let s = "498,4 -> 498,6 -> 496,6
             503,4 -> 502,4 -> 502,9 -> 494,9";
         assert_eq!(p1::solve(s), 24);
+    }
+
+    #[test]
+    fn test_solvep2() {
+        let s = "498,4 -> 498,6 -> 496,6
+            503,4 -> 502,4 -> 502,9 -> 494,9";
+        assert_eq!(p2::solve(s), 93);
     }
 }
