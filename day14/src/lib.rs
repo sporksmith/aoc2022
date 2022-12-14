@@ -193,6 +193,7 @@ pub mod p2 {
             count += 1;
             //println!("{}\n", cave);
             if pos == GENERATOR {
+                println!("{}\n", cave);
                 return count;
             }
         }
