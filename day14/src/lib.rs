@@ -42,7 +42,7 @@ impl<const FLOORED: bool> Cave<FLOORED> {
         let mut pos = GENERATOR;
         loop {
             if self.in_abyss(pos) {
-                return None
+                return None;
             }
             let next = [
                 (pos.0, pos.1 + 1),
@@ -51,9 +51,7 @@ impl<const FLOORED: bool> Cave<FLOORED> {
             ]
             .iter()
             .copied()
-            .find(|p| 
-                self.get(*p) == Cell::Empty
-            );
+            .find(|p| self.get(*p) == Cell::Empty);
             match next {
                 Some(p) => {
                     pos = p;
@@ -74,16 +72,9 @@ impl<const FLOORED: bool> FromStr for Cave<FLOORED> {
         let paths: Vec<Path> = s.lines().map(|l| l.parse().unwrap()).collect();
         let mut cave = {
             let points: Vec<Point> = paths.clone().into_iter().flatten().collect();
-            let max_wall_y: isize = points
-                .iter()
-                .map(|p| p.1)
-                .max()
-                .unwrap();
+            let max_wall_y: isize = points.iter().map(|p| p.1).max().unwrap();
             let cells: HashMap<Point, Cell> = HashMap::new();
-            Cave {
-                max_wall_y,
-                cells,
-            }
+            Cave { max_wall_y, cells }
         };
         for path in paths {
             let mut points = path.into_iter();
@@ -110,21 +101,15 @@ impl<const FLOORED: bool> Display for Cave<FLOORED> {
         } else {
             self.max_wall_y
         };
-        let minx: isize = self.cells.keys()
-            .map(|p| p.0)
-            .min()
-            .unwrap();
-        let maxx: isize = self.cells.keys()
-            .map(|p| p.0)
-            .max()
-            .unwrap();
+        let minx: isize = self.cells.keys().map(|p| p.0).min().unwrap();
+        let maxx: isize = self.cells.keys().map(|p| p.0).max().unwrap();
         for y in 0..=maxy {
             let y: isize = y.try_into().unwrap();
             if y != 0 {
                 write!(f, "\n")?;
             }
             for x in minx..=maxx {
-                let c = match self.get((x,y)) {
+                let c = match self.get((x, y)) {
                     Cell::Empty => '.',
                     Cell::Rock => '#',
                     Cell::SandSource => '+',
