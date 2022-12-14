@@ -5,7 +5,7 @@ use std::str::FromStr;
 // Signed here makes arithmetic simpler
 type Point = (isize, isize);
 
-const GENERATOR : Point = (500, 0);
+const GENERATOR: Point = (500, 0);
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 enum Cell {
@@ -13,7 +13,6 @@ enum Cell {
     Rock,
     SandSource,
     DeadSand,
-    ActiveSand,
 }
 
 struct Cave {
@@ -45,10 +44,44 @@ impl Cave {
         let i = self.idx(point)?;
         Some(&mut self.cells[i])
     }
+
+    // Returns final position of the new sand.
+    fn process_one_sand(&mut self) -> Option<Point> {
+        let mut pos = GENERATOR;
+        loop {
+            if self.idx(pos).is_none() {
+                // Off into the abyss
+                return None;
+            };
+            let next = [
+                (pos.0, pos.1 + 1),
+                (pos.0 - 1, pos.1 + 1),
+                (pos.0 + 1, pos.1 + 1),
+            ]
+            .iter()
+            .copied()
+            .find(|p| {
+                let Some(cell) = self.get(*p) else {
+                    // We can place it here... in the abyss.
+                    return true;
+                };
+                *cell == Cell::Empty
+            });
+            match next {
+                Some(p) => {
+                    pos = p;
+                }
+                None => {
+                    self[pos] = Cell::DeadSand;
+                    return Some(pos);
+                }
+            }
+        }
+    }
 }
 
 impl Index<Point> for Cave {
-    type Output=Cell;
+    type Output = Cell;
 
     fn index(&self, index: Point) -> &Self::Output {
         self.get(index).unwrap()
@@ -62,18 +95,37 @@ impl IndexMut<Point> for Cave {
 }
 
 impl FromStr for Cave {
-    type Err=();
+    type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let paths : Vec<Path> = s.lines().map(|l| l.parse().unwrap()).collect();
+        let paths: Vec<Path> = s.lines().map(|l| l.parse().unwrap()).collect();
         let mut cave = {
-            let points : Vec<Point> = paths.clone().into_iter().flatten().collect();
-            let width: usize = points.iter().map(|p| usize::try_from(p.0).unwrap()).max().unwrap() + 1;
-            let height: usize = points.iter().map(|p| usize::try_from(p.1).unwrap()).max().unwrap() + 1;
-            let minx: usize = points.iter().map(|p| usize::try_from(p.0).unwrap()).min().unwrap();
-            let mut cells : Vec<Cell> = Vec::new();
+            let points: Vec<Point> = paths.clone().into_iter().flatten().collect();
+            let width: usize = points
+                .iter()
+                .map(|p| usize::try_from(p.0).unwrap())
+                .max()
+                .unwrap()
+                + 1;
+            let height: usize = points
+                .iter()
+                .map(|p| usize::try_from(p.1).unwrap())
+                .max()
+                .unwrap()
+                + 1;
+            let minx: usize = points
+                .iter()
+                .map(|p| usize::try_from(p.0).unwrap())
+                .min()
+                .unwrap();
+            let mut cells: Vec<Cell> = Vec::new();
             cells.resize(width * height, Cell::Empty);
-            Cave{minx, width, height, cells}
+            Cave {
+                minx,
+                width,
+                height,
+                cells,
+            }
         };
         for path in paths {
             let mut points = path.into_iter();
@@ -102,12 +154,11 @@ impl Display for Cave {
             }
             for x in self.minx..self.width {
                 let x: isize = x.try_into().unwrap();
-                let c = match self[(x,y)] {
+                let c = match self[(x, y)] {
                     Cell::Empty => '.',
                     Cell::Rock => '#',
                     Cell::SandSource => '+',
                     Cell::DeadSand => 'o',
-                    Cell::ActiveSand => '~',
                 };
                 write!(f, "{c}")?;
             }
@@ -122,23 +173,25 @@ struct Path {
 }
 
 impl FromStr for Path {
-    type Err=();
+    type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let points = s.trim().split(" -> ").map(|pt| {
             let (x, y) = pt.split_once(',').unwrap();
             let x = x.parse().unwrap();
             let y = y.parse().unwrap();
-            (x,y)
+            (x, y)
         });
-        Ok(Path{points: points.collect()})
+        Ok(Path {
+            points: points.collect(),
+        })
     }
 }
 
 impl IntoIterator for Path {
-    type Item=Point;
+    type Item = Point;
 
-    type IntoIter=<Vec<Point> as IntoIterator>::IntoIter;
+    type IntoIter = <Vec<Point> as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.points.into_iter()
@@ -146,7 +199,25 @@ impl IntoIterator for Path {
 }
 
 pub mod p1 {
+    use super::*;
 
+    pub fn solve(input: &str) -> u32 {
+        let mut cave: Cave = input.parse().unwrap();
+        let mut count = 0;
+        while let Some(_pos) = cave.process_one_sand() {
+            count += 1;
+            //println!("{}\n", cave);
+        }
+        count
+    }
+}
+
+pub mod p2 {
+    use super::*;
+
+    pub fn solve(input: &str) -> u32 {
+        todo!();
+    }
 }
 
 #[cfg(test)]
@@ -154,14 +225,15 @@ mod test {
     use super::*;
 
     #[test]
-    fn parse_cave() {
+    fn test_parse_cave() {
         let s = "498,4 -> 498,6 -> 496,6
             503,4 -> 502,4 -> 502,9 -> 494,9";
         let cave: Cave = s.parse().unwrap();
         assert_eq!(cave.width, 504);
         assert_eq!(cave.height, 10);
-        println!("{cave}");
-        assert_eq!(format!("{cave}"), "\
+        assert_eq!(
+            format!("{cave}"),
+            "\
 ......+...
 ..........
 ..........
@@ -171,7 +243,26 @@ mod test {
 ..###...#.
 ........#.
 ........#.
-#########.");
+#########."
+        );
     }
 
+    #[test]
+    fn test_process_sand() {
+        let s = "498,4 -> 498,6 -> 496,6
+            503,4 -> 502,4 -> 502,9 -> 494,9";
+        let mut cave: Cave = s.parse().unwrap();
+        assert_eq!(cave.process_one_sand(), Some((500, 8)));
+        assert_eq!(cave.process_one_sand(), Some((499, 8)));
+        assert_eq!(cave.process_one_sand(), Some((501, 8)));
+        assert_eq!(cave.process_one_sand(), Some((500, 7)));
+        assert_eq!(cave.process_one_sand(), Some((498, 8)));
+    }
+
+    #[test]
+    fn test_solvep1() {
+        let s = "498,4 -> 498,6 -> 496,6
+            503,4 -> 502,4 -> 502,9 -> 494,9";
+        assert_eq!(p1::solve(s), 24);
+    }
 }
