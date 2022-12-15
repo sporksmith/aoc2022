@@ -86,8 +86,21 @@ pub mod p1 {
 pub mod p2 {
     use super::*;
 
-    pub fn solve(input: &str) -> u32 {
-        todo!()
+    pub fn solve(input: &str, max: i64) -> i64 {
+        let data: Vec<SensorData> = input.lines().map(|s| s.trim().parse().unwrap()).collect();
+        for x in 0..=max {
+            for y in 0..=max {
+                let point = Point::new(x, y);
+                let excluding_data = data.iter().find(|sd| {
+                    sd.beacon == point || sd.excludes(&Point::new(x, y))
+                });
+                if excluding_data.is_none() {
+                    println!("Found at {:?}", point);
+                    return point.x * 4000000 + point.y;
+                }
+            }
+        }
+        panic!("Not found");
     }
 }
 
@@ -112,9 +125,7 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_solvep1() {
-        let input = "Sensor at x=2, y=18: closest beacon is at x=-2, y=15
+    const TEST_INPUT: &str = "Sensor at x=2, y=18: closest beacon is at x=-2, y=15
         Sensor at x=9, y=16: closest beacon is at x=10, y=16
         Sensor at x=13, y=2: closest beacon is at x=15, y=3
         Sensor at x=12, y=14: closest beacon is at x=10, y=16
@@ -128,6 +139,14 @@ mod tests {
         Sensor at x=16, y=7: closest beacon is at x=15, y=3
         Sensor at x=14, y=3: closest beacon is at x=15, y=3
         Sensor at x=20, y=1: closest beacon is at x=15, y=3";
-        assert_eq!(p1::solve(input, 10), 26)
+
+    #[test]
+    fn test_solvep1() {
+        assert_eq!(p1::solve(TEST_INPUT, 10), 26)
+    }
+
+    #[test]
+    fn test_solvep2() {
+        assert_eq!(p2::solve(TEST_INPUT, 20), 56000011)
     }
 }
