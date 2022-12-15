@@ -1,3 +1,4 @@
+use std::ops::{Range, RangeInclusive};
 use std::str::FromStr;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -33,8 +34,15 @@ struct SensorData {
 }
 
 impl SensorData {
-    fn excludes(&self, point: &Point) -> bool {
+    fn p1_excludes(&self, point: &Point) -> bool {
         self.beacon != *point && self.sensor.dist(point) <= self.sensor.dist(&self.beacon)
+    }
+
+    fn excluded_xs_for_y(&self, y: i64) -> RangeInclusive<i64> {
+        let dist_to_sensor = self.sensor.dist(&self.beacon);
+        let dist_to_closest_y = self.sensor.dist(&Point::new(self.sensor.x, y));
+        let slack = dist_to_sensor as i64 - dist_to_closest_y as i64;
+        (self.sensor.x - slack)..=(self.sensor.x + slack)
     }
 }
 
@@ -70,7 +78,7 @@ pub mod p1 {
         //let y = 2000000;
         //let mut vis = String::new();
         for x in minx..=maxx {
-            let excluding_data = data.iter().find(|sd| sd.excludes(&Point::new(x, y)));
+            let excluding_data = data.iter().find(|sd| sd.p1_excludes(&Point::new(x, y)));
             if excluding_data.is_some() {
                 //vis.push('#');
                 excluded_count += 1;
@@ -87,17 +95,24 @@ pub mod p2 {
     use super::*;
 
     pub fn solve(input: &str, max: i64) -> i64 {
-        let data: Vec<SensorData> = input.lines().map(|s| s.trim().parse().unwrap()).collect();
-        for x in 0..=max {
-            for y in 0..=max {
-                let point = Point::new(x, y);
-                let excluding_data = data.iter().find(|sd| {
-                    sd.beacon == point || sd.excludes(&Point::new(x, y))
-                });
-                if excluding_data.is_none() {
-                    println!("Found at {:?}", point);
-                    return point.x * 4000000 + point.y;
+        let mut data: Vec<SensorData> = input.lines().map(|s| s.trim().parse().unwrap()).collect();
+        data.sort_by(|l, r| l.sensor.x.cmp(&r.sensor.x));
+        for y in 0..=max {
+            let mut x = 0;
+            for sd in data.iter() {
+                let excluded_xs = sd.excluded_xs_for_y(y);
+                if excluded_xs.contains(&x) {
+                    let next_x = excluded_xs.end() + 1;
+                    //println!("{:?} excludes {:?}; skipping to {}", sd, excluded_xs, next_x);
+                    x = next_x;
                 }
+                if x > max {
+                    break;
+                }
+            }
+            if x <= max {
+                println!("Found at {x},{y}");
+                return x * 4000000 + y;
             }
         }
         panic!("Not found");
@@ -139,6 +154,24 @@ mod tests {
         Sensor at x=16, y=7: closest beacon is at x=15, y=3
         Sensor at x=14, y=3: closest beacon is at x=15, y=3
         Sensor at x=20, y=1: closest beacon is at x=15, y=3";
+
+    #[test]
+    fn test_excluded_range() {
+        let sd: SensorData = "Sensor at x=8, y=7: closest beacon is at x=2, y=10"
+            .parse()
+            .unwrap();
+        assert_eq!(sd.excluded_xs_for_y(-2), 8..=8);
+        assert_eq!(sd.excluded_xs_for_y(-1), 7..=9);
+        assert_eq!(sd.excluded_xs_for_y(0), 6..=10);
+        assert_eq!(sd.excluded_xs_for_y(1), 5..=11);
+        assert_eq!(sd.excluded_xs_for_y(2), 4..=12);
+        assert_eq!(sd.excluded_xs_for_y(3), 3..=13);
+        assert_eq!(sd.excluded_xs_for_y(4), 2..=14);
+        assert_eq!(sd.excluded_xs_for_y(5), 1..=15);
+        assert_eq!(sd.excluded_xs_for_y(6), 0..=16);
+        assert_eq!(sd.excluded_xs_for_y(7), -1..=17);
+        assert_eq!(sd.excluded_xs_for_y(8), 0..=16);
+    }
 
     #[test]
     fn test_solvep1() {
