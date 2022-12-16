@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::str::FromStr;
 
 type Minute = u32;
@@ -27,56 +27,71 @@ impl<'a> Node<'a> {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd)]
 struct StateKey<'a> {
-    time_remaining: Minute,
     pos: Label<'a>,
-    valves_enabled: HashSet<Label<'a>>,
-    pressure_released: Pressure,
+    valves_enabled: BTreeSet<Label<'a>>,
 }
 
-/*
-impl<'a> Hash for StateKey<'a> {
-
+fn next_states<'a>(
+    nodes: &'a HashMap<Label, Node>,
+    prev_states: BTreeMap<StateKey<'a>, Pressure>,
+    rem: Minute,
+) -> BTreeMap<StateKey<'a>, Pressure> {
+    let mut next = BTreeMap::<StateKey, Pressure>::new();
+    for (key, pressure) in prev_states {
+        let node = &nodes[key.pos];
+        let valves_enabled = &key.valves_enabled;
+        if node.rate > 0 && !valves_enabled.contains(node.id) {
+            // Consider turning on the current valve.
+            let mut valves_enabled = valves_enabled.clone();
+            valves_enabled.insert(node.id);
+            let gain = node.rate * (rem - 1);
+            let pressure = pressure + gain;
+            let key = StateKey {
+                pos: node.id,
+                valves_enabled,
+            };
+            let prev_best = next.get(&key).copied().unwrap_or_default();
+            if pressure > prev_best {
+                next.insert(key, pressure);
+            }
+        }
+        for edge in &node.edges {
+            // Explore path where we travel this edge
+            let key = StateKey {
+                pos: *edge,
+                valves_enabled: valves_enabled.clone(),
+            };
+            let prev_best = next.get(&key).copied().unwrap_or_default();
+            if pressure >= prev_best {
+                next.insert(key, pressure);
+            }
+        }
+    }
+    next
 }
-*/
 
 pub mod p1 {
     use std::collections::{HashMap, HashSet};
 
     use super::*;
 
-    fn max_addtl_possible(
-        nodes: &HashMap<Label, Node>,
-        already_enabled: &HashSet<Label>,
-        pos: Label,
-        time_remaining: Minute,
-    ) -> u32 {
-        if time_remaining == 0 {
-            return 0;
-        }
-        let mut best = 0;
-        let node = &nodes[pos];
-        if node.rate > 0 && !already_enabled.contains(pos) {
-            // Explore path where we turn it on
-            let mut already_enabled = already_enabled.clone();
-            already_enabled.insert(pos);
-            let score = node.rate * (time_remaining - 1)
-                + max_addtl_possible(nodes, &already_enabled, pos, time_remaining - 1);
-            best = std::cmp::max(score, best);
-        }
-        for edge in &node.edges {
-            // Explore path where we travel this edge
-            let score = max_addtl_possible(nodes, already_enabled, *edge, time_remaining - 1);
-            best = std::cmp::max(score, best);
-        }
-        best
-    }
-
     pub fn solve(input: &str) -> u32 {
         let nodes: Vec<Node> = input.lines().map(|s| Node::parse(s.trim())).collect();
         let nodes: HashMap<Label, Node> = nodes.into_iter().map(|n| (n.id, n)).collect();
-        max_addtl_possible(&nodes, &HashSet::new(), "AA", 30)
+        let mut states = BTreeMap::<StateKey, Pressure>::from([(
+            StateKey {
+                pos: "AA",
+                valves_enabled: BTreeSet::new(),
+            },
+            0,
+        )]);
+        for rem in (1..=30).rev() {
+            println!("{rem} minutes rem: {} states", states.len());
+            states = next_states(&nodes, states, rem);
+        }
+        *states.values().max().unwrap()
     }
 }
 
