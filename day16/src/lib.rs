@@ -140,45 +140,50 @@ pub mod p2 {
                     }
 
                     let potential_future_gain: Pressure = {
-                        let remaining_valve_values = nodes.values().filter_map(|node|
+                        let remaining_valve_values = nodes.values().filter_map(|node| {
                             if valves_enabled.contains(node.id) {
                                 None
                             } else {
                                 Some(node.rate)
                             }
-                        );
-
-                        /*
-                        .collect();
-                        remaining_valve_values.sort();
-                        let mut iter = remaining_valve_values.iter().rev();
-                        let mut sum = 0;
-                        if rem > 2 {
-                            for rem in (1..(rem-2)).rev() {
-                                if let Some(p) = iter.next() {
-                                    sum += (rem - 1) * p;
-                                } else {
-                                    break;
-                                }
-                                if let Some(p) = iter.next() {
-                                    sum += (rem - 1) * p;
-                                } else {
-                                    break;
-                                }
-                            }
-                        }
-                        sum
-                        */
-                        // First try bounding by if we could turn them all on at once
+                        });
+                        // Best we can do if we could somehow turn on all remaining valves at once.
                         if rem <= 2 {
                             0
                         } else {
                             remaining_valve_values.sum::<Pressure>() * (rem - 2)
                         }
+                        /*
+                        // try to get a tighter bound; couldn't get it quite right and didn't seem
+                        // to be helping that much more.
+                        let mut remaining_valve_values: Vec<Pressure> = nodes.values().filter_map(|node|
+                            if valves_enabled.contains(node.id) {
+                                None
+                            } else {
+                                Some(node.rate)
+                            }
+                        ).collect();
+                        remaining_valve_values.sort();
+                        let mut iter = remaining_valve_values.iter().rev();
+                        let mut sum = 0;
+                        for rem in (1..(rem-1)).rev() {
+                            if let Some(p) = iter.next() {
+                                sum += (rem - 1) * p;
+                            } else {
+                                break;
+                            }
+                            if let Some(p) = iter.next() {
+                                sum += (rem - 1) * p;
+                            } else {
+                                break;
+                            }
+                        }
+                        sum
+                        */
                     };
                     if next_pressure + potential_future_gain < best_so_far {
                         // Don't bother exploring
-                        continue
+                        continue;
                     }
 
                     // Sort positions
