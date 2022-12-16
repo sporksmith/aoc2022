@@ -112,6 +112,7 @@ pub mod p2 {
         rem: Minute,
     ) -> BTreeMap<StateKey<'a>, Pressure> {
         let mut next = BTreeMap::<StateKey, Pressure>::new();
+        let best_so_far = *prev_states.values().max().unwrap();
         for (key, pressure) in prev_states {
             let valves_enabled = &key.valves_enabled;
             let (pos1, pos2) = key.pos;
@@ -137,6 +138,49 @@ pub mod p2 {
                     } else if next2 != "on" {
                         pos2 = next2;
                     }
+
+                    let potential_future_gain: Pressure = {
+                        let remaining_valve_values = nodes.values().filter_map(|node|
+                            if valves_enabled.contains(node.id) {
+                                None
+                            } else {
+                                Some(node.rate)
+                            }
+                        );
+
+                        /*
+                        .collect();
+                        remaining_valve_values.sort();
+                        let mut iter = remaining_valve_values.iter().rev();
+                        let mut sum = 0;
+                        if rem > 2 {
+                            for rem in (1..(rem-2)).rev() {
+                                if let Some(p) = iter.next() {
+                                    sum += (rem - 1) * p;
+                                } else {
+                                    break;
+                                }
+                                if let Some(p) = iter.next() {
+                                    sum += (rem - 1) * p;
+                                } else {
+                                    break;
+                                }
+                            }
+                        }
+                        sum
+                        */
+                        // First try bounding by if we could turn them all on at once
+                        if rem <= 2 {
+                            0
+                        } else {
+                            remaining_valve_values.sum::<Pressure>() * (rem - 2)
+                        }
+                    };
+                    if next_pressure + potential_future_gain < best_so_far {
+                        // Don't bother exploring
+                        continue
+                    }
+
                     // Sort positions
                     if pos1 > pos2 {
                         std::mem::swap(&mut pos1, &mut pos2);
