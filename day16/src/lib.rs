@@ -27,55 +27,55 @@ impl<'a> Node<'a> {
     }
 }
 
-#[derive(Debug, Eq, PartialEq, Ord, PartialOrd)]
-struct StateKey<'a> {
-    pos: Label<'a>,
-    valves_enabled: BTreeSet<Label<'a>>,
-}
-
-fn next_states<'a>(
-    nodes: &'a HashMap<Label, Node>,
-    prev_states: BTreeMap<StateKey<'a>, Pressure>,
-    rem: Minute,
-) -> BTreeMap<StateKey<'a>, Pressure> {
-    let mut next = BTreeMap::<StateKey, Pressure>::new();
-    for (key, pressure) in prev_states {
-        let node = &nodes[key.pos];
-        let valves_enabled = &key.valves_enabled;
-        if node.rate > 0 && !valves_enabled.contains(node.id) {
-            // Consider turning on the current valve.
-            let mut valves_enabled = valves_enabled.clone();
-            valves_enabled.insert(node.id);
-            let gain = node.rate * (rem - 1);
-            let pressure = pressure + gain;
-            let key = StateKey {
-                pos: node.id,
-                valves_enabled,
-            };
-            let prev_best = next.get(&key).copied().unwrap_or_default();
-            if pressure > prev_best {
-                next.insert(key, pressure);
-            }
-        }
-        for edge in &node.edges {
-            // Explore path where we travel this edge
-            let key = StateKey {
-                pos: *edge,
-                valves_enabled: valves_enabled.clone(),
-            };
-            let prev_best = next.get(&key).copied().unwrap_or_default();
-            if pressure >= prev_best {
-                next.insert(key, pressure);
-            }
-        }
-    }
-    next
-}
-
 pub mod p1 {
     use std::collections::{HashMap, HashSet};
 
     use super::*;
+
+    #[derive(Debug, Eq, PartialEq, Ord, PartialOrd)]
+    struct StateKey<'a> {
+        pos: Label<'a>,
+        valves_enabled: BTreeSet<Label<'a>>,
+    }
+
+    fn next_states<'a>(
+        nodes: &'a HashMap<Label, Node>,
+        prev_states: BTreeMap<StateKey<'a>, Pressure>,
+        rem: Minute,
+    ) -> BTreeMap<StateKey<'a>, Pressure> {
+        let mut next = BTreeMap::<StateKey, Pressure>::new();
+        for (key, pressure) in prev_states {
+            let node = &nodes[key.pos];
+            let valves_enabled = &key.valves_enabled;
+            if node.rate > 0 && !valves_enabled.contains(node.id) {
+                // Consider turning on the current valve.
+                let mut valves_enabled = valves_enabled.clone();
+                valves_enabled.insert(node.id);
+                let gain = node.rate * (rem - 1);
+                let pressure = pressure + gain;
+                let key = StateKey {
+                    pos: node.id,
+                    valves_enabled,
+                };
+                let prev_best = next.get(&key).copied().unwrap_or_default();
+                if pressure > prev_best {
+                    next.insert(key, pressure);
+                }
+            }
+            for edge in &node.edges {
+                // Explore path where we travel this edge
+                let key = StateKey {
+                    pos: *edge,
+                    valves_enabled: valves_enabled.clone(),
+                };
+                let prev_best = next.get(&key).copied().unwrap_or_default();
+                if pressure >= prev_best {
+                    next.insert(key, pressure);
+                }
+            }
+        }
+        next
+    }
 
     pub fn solve(input: &str) -> u32 {
         let nodes: Vec<Node> = input.lines().map(|s| Node::parse(s.trim())).collect();
@@ -100,8 +100,74 @@ pub mod p2 {
 
     use super::*;
 
+    #[derive(Debug, Eq, PartialEq, Ord, PartialOrd)]
+    struct StateKey<'a> {
+        pos: (Label<'a>, Label<'a>),
+        valves_enabled: BTreeSet<Label<'a>>,
+    }
+
+    fn next_states<'a>(
+        nodes: &'a HashMap<Label, Node>,
+        prev_states: BTreeMap<StateKey<'a>, Pressure>,
+        rem: Minute,
+    ) -> BTreeMap<StateKey<'a>, Pressure> {
+        let mut next = BTreeMap::<StateKey, Pressure>::new();
+        for (key, pressure) in prev_states {
+            let valves_enabled = &key.valves_enabled;
+            let (pos1, pos2) = key.pos;
+            let node1 = &nodes[pos1];
+            let node2 = &nodes[pos2];
+            for next1 in node1.edges.iter().chain(&["on"]).copied() {
+                for next2 in node2.edges.iter().chain(&["on"]).copied() {
+                    let mut next_pressure = pressure;
+                    // Preemptively clone here for simplicity. If you remove this,
+                    // be careful that both don't turn on the same valve below.
+                    let mut valves_enabled = valves_enabled.clone();
+                    let mut pos1 = pos1;
+                    let mut pos2 = pos2;
+                    if next1 == "on" && node1.rate > 0 && !valves_enabled.contains(pos1) {
+                        next_pressure += node1.rate * (rem - 1);
+                        valves_enabled.insert(pos1);
+                    } else if next1 != "on" {
+                        pos1 = next1;
+                    }
+                    if next2 == "on" && node2.rate > 0 && !valves_enabled.contains(pos2) {
+                        next_pressure += node2.rate * (rem - 1);
+                        valves_enabled.insert(pos2);
+                    } else if next2 != "on" {
+                        pos2 = next2;
+                    }
+                    // Sort positions
+                    if pos1 > pos2 {
+                        std::mem::swap(&mut pos1, &mut pos2);
+                    }
+                    let key = StateKey {
+                        pos: (pos1, pos2),
+                        valves_enabled,
+                    };
+                    let best_for_key = next.entry(key).or_default();
+                    *best_for_key = std::cmp::max(*best_for_key, next_pressure);
+                }
+            }
+        }
+        next
+    }
+
     pub fn solve(input: &str) -> u32 {
-        todo!()
+        let nodes: Vec<Node> = input.lines().map(|s| Node::parse(s.trim())).collect();
+        let nodes: HashMap<Label, Node> = nodes.into_iter().map(|n| (n.id, n)).collect();
+        let mut states = BTreeMap::<StateKey, Pressure>::from([(
+            StateKey {
+                pos: ("AA", "AA"),
+                valves_enabled: BTreeSet::new(),
+            },
+            0,
+        )]);
+        for rem in (1..=26).rev() {
+            println!("{rem} minutes rem: {} states", states.len());
+            states = next_states(&nodes, states, rem);
+        }
+        *states.values().max().unwrap()
     }
 }
 
@@ -143,5 +209,10 @@ mod tests {
     #[test]
     fn test_p1() {
         assert_eq!(p1::solve(INPUT), 1651);
+    }
+
+    #[test]
+    fn test_p2() {
+        assert_eq!(p2::solve(INPUT), 1707);
     }
 }
