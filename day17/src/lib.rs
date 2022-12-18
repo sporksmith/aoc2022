@@ -247,6 +247,14 @@ pub mod p1 {
     }
 }
 
+pub mod p2 {
+    use super::*;
+
+    pub fn solve(input: &str) -> isize {
+        todo!()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
