@@ -50,28 +50,39 @@ pub mod p2 {
         liquid_points: &HashSet<Point>,
         lower_corner: Point,
         upper_corner: Point,
-        interior_points: &HashSet<Point>,
+        interior_points: &mut HashSet<Point>,
+        exterior_points: &mut HashSet<Point>,
     ) -> bool {
         let mut to_explore = HashSet::<Point>::from([empty_point]);
         let mut already_explored = HashSet::<Point>::new();
 
         loop {
             let Some(p) = to_explore.iter().copied().next() else {
-                // We weren't able to find the outside
+                // We weren't able to find the outside.
+                // All explored points are interior.
+                interior_points.extend(already_explored.iter());
                 return true;
             };
             to_explore.remove(&p);
             if interior_points.contains(&p) {
                 // Connected to a point we already know is interior
+                interior_points.extend(already_explored.iter());
                 return true;
             }
             assert!(!liquid_points.contains(&p));
+            if exterior_points.contains(&p) {
+                // Connected to a point we already know is exterior
+                exterior_points.extend(already_explored);
+                return false;
+            }
             if p.0 < lower_corner.0 || p.1 < lower_corner.1 || p.2 < lower_corner.2 {
                 // found route to outside
+                exterior_points.extend(already_explored);
                 return false;
             }
             if p.0 > upper_corner.0 || p.1 > upper_corner.1 || p.2 > upper_corner.2 {
                 // found route to outside
+                exterior_points.extend(already_explored);
                 return false;
             }
             already_explored.insert(p);
@@ -109,6 +120,7 @@ pub mod p2 {
         //let upper_bound = liquit_points.iter().min().unwrap();
 
         let mut interior_points = HashSet::<Point>::new();
+        let mut exterior_points = HashSet::<Point>::new();
         let mut outside_sides = 0;
 
         for p in &liquid_points {
@@ -124,7 +136,8 @@ pub mod p2 {
                     &liquid_points,
                     lower_bound,
                     upper_bound,
-                    &interior_points,
+                    &mut interior_points,
+                    &mut exterior_points,
                 ) {
                     interior_points.insert(p);
                     //println!("  is interior");
