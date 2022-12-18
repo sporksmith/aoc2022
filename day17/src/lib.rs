@@ -189,6 +189,35 @@ fn print_tower(shape: &Rock, shape_pos: &Pos, tower: &Rock, tower_pos: &Pos) {
     )
 }
 
+#[derive(Eq, PartialEq, Ord, PartialOrd)]
+struct StateKey {
+    jet_idx: u32,
+    shape_idx: u8,
+    top_lines: Vec<u8>,
+}
+
+impl StateKey {
+    fn new(jet_idx: usize, shape_idx: usize, tower: &Rock) -> Self {
+        let mut top_lines = Vec::<u8>::new();
+        for dy in 0..10 {
+            let y = tower.maxy - dy;
+            let mut line = 0u8;
+            for x in 1..=WIDTH {
+                if tower.positions.contains(&Pos::new(x, y)) {
+                    line += 1;
+                }
+                line <<= 2;
+            }
+            top_lines.push(line);
+        }
+        Self { jet_idx: jet_idx as u32, shape_idx: shape_idx as u8, top_lines }
+    }
+}
+
+struct StateValue {
+    height: usize,
+}
+
 pub fn simulate(input: &str, rock_limit: usize) -> isize {
     let mut tower = Rock::new([Pos::new(0, 0); 0]);
     let mut tower_pos = Pos::new(0, 0);
